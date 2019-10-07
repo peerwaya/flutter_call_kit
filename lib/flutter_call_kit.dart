@@ -81,12 +81,14 @@ class IOSOptions {
   final bool supportsVideo;
 
   IOSOptions(this.appName,
-      {this.imageName,
-      this.ringtoneSound,
+      {this.imageName = "",
+      this.ringtoneSound = "",
       this.maximumCallGroups = 3,
       this.maximumCallsPerCallGroup = 1,
       this.supportsVideo = true})
       : assert(appName != null),
+        assert(imageName != null),
+        assert(ringtoneSound != null),
         assert(maximumCallGroups != null),
         assert(maximumCallsPerCallGroup != null),
         assert(supportsVideo != null);

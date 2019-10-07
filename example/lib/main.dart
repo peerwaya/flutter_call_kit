@@ -42,51 +42,51 @@ class _MyAppState extends State<MyApp> {
   }
 
   /// Use startCall to ask the system to start a call - Initiate an outgoing call from this point
-  startCall(String handle, String localizedCallerName) {
+  Future<void> startCall(String handle, String localizedCallerName) async {
     /// Your normal start call action
-    FlutterCallKit().startCall(currentCallId, handle, localizedCallerName);
+    await FlutterCallKit().startCall(currentCallId, handle, localizedCallerName);
   }
 
-  reportEndCallWithUUID(String uuid, EndReason reason) {
-    FlutterCallKit().reportEndCallWithUUID(uuid, reason);
+  Future<void> reportEndCallWithUUID(String uuid, EndReason reason) async {
+    await FlutterCallKit().reportEndCallWithUUID(uuid, reason);
   }
 
   /// Event Listener Callbacks
 
-
-  _didReceiveStartCallAction(String uuid, String handle) {
+  Future<void> _didReceiveStartCallAction(String uuid, String handle) async {
     // Get this event after the system decides you can start a call
     // You can now start a call from within your app
   }
 
-  _performAnswerCallAction(String uuid) {
+  Future<void> _performAnswerCallAction(String uuid) async {
     // Called when the user answers an incoming call
   }
 
-  _performEndCallAction(String uuid) {
-    FlutterCallKit().endCall(this.currentCallId);
+  Future<void> _performEndCallAction(String uuid) async {
+    await FlutterCallKit().endCall(this.currentCallId);
     _currentCallId = null;
   }
 
-  _didActivateAudioSession() {
+  Future<void> _didActivateAudioSession() async {
     // you might want to do following things when receiving this event:
     // - Start playing ringback if it is an outgoing call
   }
 
-  _didDisplayIncomingCall(String error, String uuid, String handle,
-      String localizedCallerName, bool fromPushKit) {
+  Future<void> _didDisplayIncomingCall(String error, String uuid, String handle,
+      String localizedCallerName, bool fromPushKit) async {
     // You will get this event after RNCallKeep finishes showing incoming call UI
     // You can check if there was an error while displaying
   }
 
-  _didPerformSetMutedCallAction(bool mute, String uuid) {
+  Future<void> _didPerformSetMutedCallAction(bool mute, String uuid) async {
     // Called when the system or user mutes a call
   }
-  _didPerformDTMFAction(String digit, String uuid) {
+
+  Future<void> _didPerformDTMFAction(String digit, String uuid) async {
     // Called when the system or user performs a DTMF action
   }
 
-  _didToggleHoldAction(bool hold, String uuid) {
+  Future<void> _didToggleHoldAction(bool hold, String uuid) async {
     // Called when the system or user holds a call
   }
 

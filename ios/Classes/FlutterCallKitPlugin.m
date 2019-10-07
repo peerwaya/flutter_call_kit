@@ -146,7 +146,7 @@ static CXProvider* sharedProvider;
     NSString* handleType = arguments[@"handleType"];
     NSNumber* video = arguments[@"video"];
     NSString* localizedCallerName = arguments[@"localizedCallerName"];
-    [self reportNewIncomingCall:uuidString handle:handle handleType:handleType hasVideo:[video boolValue] localizedCallerName:localizedCallerName fromPushKit:NO];
+    [FlutterCallKitPlugin reportNewIncomingCall:uuidString handle:handle handleType:handleType hasVideo:[video boolValue] localizedCallerName:localizedCallerName fromPushKit:NO];
     result(nil);
 }
 
