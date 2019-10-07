@@ -15,7 +15,7 @@ For more information about **CallKit** on iOS, please see [Official CallKit Fram
 
 
 ## iOS
-![Connection Service](docs/pictures/call-kit.png)
+![Connection Service](https://github.com/react-native-webrtc/react-native-callkeep/blob/master/docs/pictures/call-kit.png)
 
 ## Usage
 Add `flutter_call_kit` as a [dependency in your pubspec.yaml file](https://flutter.io/using-packages/).
