@@ -40,7 +40,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _configured;
   String _currentCallId;
-
+  FlutterCallKit _callKit = FlutterCallKit();
   @override
   void initState() {
     super.initState();
@@ -48,7 +48,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> configure() async {
-    FlutterCallKit().configure(
+    _callKit.configure(
       IOSOptions("My Awesome APP",
           imageName: 'sim_icon',
           supportsVideo: false,
@@ -71,11 +71,11 @@ class _MyAppState extends State<MyApp> {
   /// Use startCall to ask the system to start a call - Initiate an outgoing call from this point
   Future<void> startCall(String handle, String localizedCallerName) async {
     /// Your normal start call action
-    await FlutterCallKit().startCall(currentCallId, handle, localizedCallerName);
+    await _callKit.startCall(currentCallId, handle, localizedCallerName);
   }
 
   Future<void> reportEndCallWithUUID(String uuid, EndReason reason) async {
-    await FlutterCallKit().reportEndCallWithUUID(uuid, reason);
+    await _callKit.reportEndCallWithUUID(uuid, reason);
   }
 
   /// Event Listener Callbacks
@@ -90,7 +90,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _performEndCallAction(String uuid) async {
-    await FlutterCallKit().endCall(this.currentCallId);
+    await _callKit.endCall(this.currentCallId);
     _currentCallId = null;
   }
 
