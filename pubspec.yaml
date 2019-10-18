@@ -1,6 +1,6 @@
 name: flutter_call_kit
 description: Flutter iOS CallKit framework - Currently iOS >= 10.0 only
-version: 0.0.2
+version: 0.0.3
 author: Onyemaechi Okafor <peerwaya@yahoo.com>
 homepage: https://github.com/peerwaya/flutter_call_kit
 

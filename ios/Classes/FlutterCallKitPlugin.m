@@ -10,7 +10,7 @@ static int const OUTGOING_CALL_WAKEUP_DELAY = 5;
 
 static NSString *const kHandleStartCallNotification = @"handleStartCallNotification";
 static NSString *const kDidReceiveStartCallAction = @"didReceiveStartCallAction";
-static NSString *const kPerformAnswerCallAction = @"onPerformAnswerCallAction";
+static NSString *const kPerformAnswerCallAction = @"performAnswerCallAction";
 static NSString *const kPerformEndCallAction = @"performEndCallAction";
 static NSString *const kDidActivateAudioSession = @"didActivateAudioSession";
 static NSString *const kDidDeactivateAudioSession = @"didDeactivateAudioSession";
@@ -33,7 +33,9 @@ static FlutterError *getFlutterError(NSError *error) {
 @implementation FlutterCallKitPlugin {
     FlutterMethodChannel* _channel;
     NSOperatingSystemVersion _version;
-    BOOL _isStartCallActionEventListenerAdded;
+    BOOL _isConfigured;
+    NSDictionary *_incomingCallNotification;
+    NSDictionary *_startCallNotification;
 }
 
 static CXProvider* sharedProvider;
@@ -51,7 +53,7 @@ static CXProvider* sharedProvider;
                     methodChannelWithName:@"com.peerwaya/flutter_callkit_plugin"
                     binaryMessenger:[registrar messenger]];
         [registrar addMethodCallDelegate:self channel:_channel];
-        _isStartCallActionEventListenerAdded = NO;
+        _isConfigured = NO;
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(handleNewIncomingCall:)
                                                      name:kIncomingCallNotification
@@ -64,6 +66,7 @@ static CXProvider* sharedProvider;
     if (sharedProvider == nil) {
         NSDictionary *settings = [[NSUserDefaults standardUserDefaults] dictionaryForKey:@"FlutterCallKitPluginSettings"];
         sharedProvider = [[CXProvider alloc] initWithConfiguration:[FlutterCallKitPlugin getProviderConfiguration:settings]];
+        NSLog(@"[FlutterCallKit][initCallKitProvider] sharedProvider initialized with %@", settings);
     }
 }
 
@@ -83,36 +86,36 @@ static CXProvider* sharedProvider;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
     NSString *method = call.method;
     if ([@"configure" isEqualToString:method]) {
+        _isConfigured = YES;
         [self configure:call.arguments result:result];
-        result(nil);
-    }if ([@"checkIfBusy" isEqualToString:method]) {
+    }else if ([@"checkIfBusy" isEqualToString:method]) {
 #ifdef DEBUG
         NSLog(@"[FlutterCallKitPlugin][checkIfBusy]");
 #endif
         result(@(self.callKitCallController.callObserver.calls.count > 0));
-    }if ([@"checkSpeaker" isEqualToString:method]) {
+    }else if ([@"checkSpeaker" isEqualToString:method]) {
 #ifdef DEBUG
         NSLog(@"[FlutterCallKitPlugin][checkSpeaker]");
 #endif
         NSString *output = [AVAudioSession sharedInstance].currentRoute.outputs.count > 0 ? [AVAudioSession sharedInstance].currentRoute.outputs[0].portType : nil;
         result(@([output isEqualToString:@"Speaker"]));
-    }if ([@"displayIncomingCall" isEqualToString:method]) {
+    }else if ([@"displayIncomingCall" isEqualToString:method]) {
         [self displayIncomingCall:call.arguments result:result];
-    }if ([@"startCall" isEqualToString:method]) {
+    }else if ([@"startCall" isEqualToString:method]) {
         [self startCall:call.arguments result:result];
-    }if ([@"reportConnectingOutgoingCallWithUUID" isEqualToString:method]) {
+    }else if ([@"reportConnectingOutgoingCallWithUUID" isEqualToString:method]) {
         [self reportConnectingOutgoingCallWithUUID:(NSString *)call.arguments result:result];
-    }if ([@"reportEndCall" isEqualToString:method]) {
+    }else if ([@"reportEndCall" isEqualToString:method]) {
         [self reportEndCall:call.arguments result:result];
-    }if ([@"endCall" isEqualToString:method]) {
+    }else if ([@"endCall" isEqualToString:method]) {
         [self endCall:(NSString *)call.arguments result:result];
-    }if ([@"endAllCalls" isEqualToString:method]) {
+    }else if ([@"endAllCalls" isEqualToString:method]) {
         [self endAllCalls:result];
-    }if ([@"setMutedCall" isEqualToString:method]) {
+    }else if ([@"setMutedCall" isEqualToString:method]) {
         [self setMutedCall:call.arguments result:result];
-    }if ([@"updateDisplay" isEqualToString:method]) {
+    }else if ([@"updateDisplay" isEqualToString:method]) {
         [self updateDisplay:call.arguments result:result];
-    }if ([@"setOnHold" isEqualToString:method]) {
+    }else if ([@"setOnHold" isEqualToString:method]) {
         [self setOnHold:call.arguments result:result];
     }else {
         result(FlutterMethodNotImplemented);
@@ -135,6 +138,14 @@ static CXProvider* sharedProvider;
     
     self.callKitProvider = sharedProvider;
     [self.callKitProvider setDelegate:self queue:nil];
+    if (_incomingCallNotification != nil) {
+        [_channel invokeMethod:kDidDisplayIncomingCall arguments:_incomingCallNotification];
+        _incomingCallNotification = nil;
+    }
+    if (_startCallNotification != nil) {
+        [_channel invokeMethod:kDidDisplayIncomingCall arguments:_startCallNotification];
+        _startCallNotification = nil;
+    }
     result(nil);
 }
 
@@ -241,6 +252,12 @@ static CXProvider* sharedProvider;
             [self.callKitProvider reportCallWithUUID:uuid endedAtDate:[NSDate date] reason:CXCallEndedReasonRemoteEnded];
             break;
         case CXCallEndedReasonUnanswered:
+            [self.callKitProvider reportCallWithUUID:uuid endedAtDate:[NSDate date] reason:CXCallEndedReasonUnanswered];
+            break;
+        case CXCallEndedReasonAnsweredElsewhere:
+            [self.callKitProvider reportCallWithUUID:uuid endedAtDate:[NSDate date] reason:CXCallEndedReasonUnanswered];
+            break;
+        case CXCallEndedReasonDeclinedElsewhere:
             [self.callKitProvider reportCallWithUUID:uuid endedAtDate:[NSDate date] reason:CXCallEndedReasonUnanswered];
             break;
         default:
@@ -459,7 +476,11 @@ continueUserActivity:(NSUserActivity *)userActivity
                                    @"handle": handle,
                                    @"video": @(isVideoCall)
                                    };
-        [_channel invokeMethod:kHandleStartCallNotification arguments:userInfo];
+        if (_isConfigured) {
+            [_channel invokeMethod:kHandleStartCallNotification arguments:userInfo];
+        } else {
+            _startCallNotification = userInfo;
+        }
         return YES;
     }
     return NO;
@@ -473,10 +494,11 @@ continueUserActivity:(NSUserActivity *)userActivity
                   fromPushKit:(BOOL)fromPushKit
 {
 #ifdef DEBUG
-    NSLog(@"[FlutterCallKitPlugin][reportNewIncomingCall] uuidString = %@", uuidString);
+    NSLog(@"[FlutterCallKitPlugin][reportNewIncomingCall] uuidString = %@, handle = %@, handleType = %@, hasVideo = %@, localizedCallerName = %@, fromPushKit = %@", uuidString, handle, handleType, @(hasVideo), localizedCallerName, @(fromPushKit) );
 #endif
     int _handleType = [FlutterCallKitPlugin getHandleType:handleType];
     NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:uuidString];
+    NSLog(@"[FlutterCallKitPlugin][reportNewIncomingCall] uuid = %@", uuid );
     CXCallUpdate *callUpdate = [[CXCallUpdate alloc] init];
     callUpdate.remoteHandle = [[CXHandle alloc] initWithType:_handleType value:handle];
     callUpdate.supportsDTMF = YES;
@@ -490,16 +512,20 @@ continueUserActivity:(NSUserActivity *)userActivity
     [sharedProvider reportNewIncomingCallWithUUID:uuid update:callUpdate completion:^(NSError * _Nullable error) {
         [[NSNotificationCenter defaultCenter] postNotificationName:kIncomingCallNotification
                                                             object:self
-                                                          userInfo:@{ @"error": error ? error.localizedDescription : @"", @"callUUID": uuidString, @"handle": handle, @"localizedCallerName": localizedCallerName, @"fromPushKit": fromPushKit ? @"1" : @"0" }];
+                                                          userInfo:@{ @"error": error ? error.localizedDescription : [NSNull null], @"callUUID": uuidString, @"handle": handle, @"localizedCallerName": localizedCallerName, @"fromPushKit": @(fromPushKit)}];
     }];
 }
 
 - (void)handleNewIncomingCall:(NSNotification *)notification
 {
-#ifdef DEBUG
-    NSLog(@"[FlutterCallKitPlugin] handleNewIncomingCall notification.userInfo = %@", notification.userInfo);
-#endif
-    [_channel invokeMethod:kDidDisplayIncomingCall arguments:notification.userInfo];
+    #ifdef DEBUG
+        NSLog(@"[FlutterCallKitPlugin] handleNewIncomingCall notification.userInfo = %@", notification.userInfo);
+    #endif
+    if (_isConfigured) {
+        [_channel invokeMethod:kDidDisplayIncomingCall arguments:notification.userInfo];
+    } else {
+        _incomingCallNotification = notification.userInfo;
+    }
     NSDictionary *userInfo = (NSDictionary *)notification.userInfo;
     if (userInfo[@"error"] == nil) {
         // Workaround per https://forums.developer.apple.com/message/169511
