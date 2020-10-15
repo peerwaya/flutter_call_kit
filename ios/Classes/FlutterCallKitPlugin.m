@@ -105,6 +105,8 @@ static CXProvider* sharedProvider;
         [self startCall:call.arguments result:result];
     }else if ([@"reportConnectingOutgoingCallWithUUID" isEqualToString:method]) {
         [self reportConnectingOutgoingCallWithUUID:(NSString *)call.arguments result:result];
+    }else if ([@"reportConnectedOutgoingCallWithUUID" isEqualToString:method]) {
+        [self reportConnectedOutgoingCallWithUUID:(NSString *)call.arguments result:result];
     }else if ([@"reportEndCall" isEqualToString:method]) {
         [self reportEndCall:call.arguments result:result];
     }else if ([@"endCall" isEqualToString:method]) {
