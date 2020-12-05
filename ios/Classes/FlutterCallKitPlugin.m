@@ -389,7 +389,7 @@ static CXProvider* sharedProvider;
     providerConfiguration.supportsVideo = YES;
     providerConfiguration.maximumCallGroups = 3;
     providerConfiguration.maximumCallsPerCallGroup = 1;
-    providerConfiguration.supportedHandleTypes = [NSSet setWithObjects:[NSNumber numberWithInteger:CXHandleTypePhoneNumber], nil];
+    providerConfiguration.supportedHandleTypes = [NSSet setWithObjects:[NSNumber numberWithInteger:CXHandleTypeGeneric],[NSNumber numberWithInteger:CXHandleTypePhoneNumber], [NSNumber numberWithInteger:CXHandleTypeEmailAddress], nil];
     if (settings[@"supportsVideo"]) {
         providerConfiguration.supportsVideo = [settings[@"supportsVideo"] boolValue];
     }
@@ -413,15 +413,15 @@ static CXProvider* sharedProvider;
 #ifdef DEBUG
     NSLog(@"[FlutterCallKitPlugin][configureAudioSession] Activating audio session");
 #endif
-    
+
     AVAudioSession* audioSession = [AVAudioSession sharedInstance];
     [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionAllowBluetooth error:nil];
-    
+
     [audioSession setMode:AVAudioSessionModeVoiceChat error:nil];
-    
+
     double sampleRate = 44100.0;
     [audioSession setPreferredSampleRate:sampleRate error:nil];
-    
+
     NSTimeInterval bufferDuration = .005;
     [audioSession setPreferredIOBufferDuration:bufferDuration error:nil];
     [audioSession setActive:TRUE error:nil];
@@ -440,7 +440,7 @@ continueUserActivity:(NSUserActivity *)userActivity
     NSString *handle;
     BOOL isAudioCall;
     BOOL isVideoCall;
-    
+
     //HACK TO AVOID XCODE 10 COMPILE CRASH
     //REMOVE ON NEXT MAJOR RELEASE OF RNCALLKIT
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
@@ -448,8 +448,13 @@ continueUserActivity:(NSUserActivity *)userActivity
     // iOS 13 returns an INStartCallIntent userActivity type
     if (@available(iOS 13, *)) {
         INStartCallIntent *intent = (INStartCallIntent*)interaction.intent;
-        isAudioCall = intent.callCapability == INCallCapabilityAudioCall;
-        isVideoCall = intent.callCapability == INCallCapabilityVideoCall;
+        if ([intent respondsToSelector:@selector(callCapability)]) {
+            isAudioCall = intent.callCapability == INCallCapabilityAudioCall;
+            isVideoCall = intent.callCapability == INCallCapabilityVideoCall;
+        } else {
+            isAudioCall = [userActivity.activityType isEqualToString:INStartAudioCallIntentIdentifier];
+            isVideoCall = [userActivity.activityType isEqualToString:INStartVideoCallIntentIdentifier];
+        }
     } else {
 #endif
         //XCode 10 and below
