@@ -390,6 +390,9 @@ static CXProvider* sharedProvider;
     providerConfiguration.maximumCallGroups = 3;
     providerConfiguration.maximumCallsPerCallGroup = 1;
     providerConfiguration.supportedHandleTypes = [NSSet setWithObjects:[NSNumber numberWithInteger:CXHandleTypeGeneric],[NSNumber numberWithInteger:CXHandleTypePhoneNumber], [NSNumber numberWithInteger:CXHandleTypeEmailAddress], nil];
+    if (@available(iOS 11.0, *)) {
+        providerConfiguration.includesCallsInRecents = [settings[@"includesCallsInRecents"] boolValue];
+    }
     if (settings[@"supportsVideo"]) {
         providerConfiguration.supportsVideo = [settings[@"supportsVideo"] boolValue];
     }

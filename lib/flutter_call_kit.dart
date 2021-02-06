@@ -60,7 +60,11 @@ typedef Future<dynamic> OnStartCall(String handle, bool video);
 
 enum HandleType { phoneNumber, generic, email }
 
-enum EndReason { failed, remoteEnded, unanswered,  }
+enum EndReason {
+  failed,
+  remoteEnded,
+  unanswered,
+}
 
 class IOSOptions {
   ///  It will be displayed on system UI when incoming calls received
@@ -81,18 +85,24 @@ class IOSOptions {
   /// If provided, whether or not the application supports video calling (Default: true)
   final bool supportsVideo;
 
-  IOSOptions(this.appName,
-      {this.imageName = "",
-      this.ringtoneSound = "",
-      this.maximumCallGroups = 3,
-      this.maximumCallsPerCallGroup = 1,
-      this.supportsVideo = true})
-      : assert(appName != null),
+  /// If provided, whether or not the application saves calls in users recents call log (Default: true, iOS 11+ only)
+  final bool includesCallsInRecents;
+
+  IOSOptions(
+    this.appName, {
+    this.imageName = "",
+    this.ringtoneSound = "",
+    this.maximumCallGroups = 3,
+    this.maximumCallsPerCallGroup = 1,
+    this.supportsVideo = true,
+    this.includesCallsInRecents = true,
+  })  : assert(appName != null),
         assert(imageName != null),
         assert(ringtoneSound != null),
         assert(maximumCallGroups != null),
         assert(maximumCallsPerCallGroup != null),
-        assert(supportsVideo != null);
+        assert(supportsVideo != null),
+        assert(includesCallsInRecents != null);
 
   Map<String, dynamic> toMap() {
     return {
@@ -101,7 +111,8 @@ class IOSOptions {
       "ringtoneSound": ringtoneSound,
       "maximumCallGroups": maximumCallGroups?.toString(),
       "maximumCallsPerCallGroup": maximumCallsPerCallGroup?.toString(),
-      "supportsVideo": supportsVideo
+      "supportsVideo": supportsVideo,
+      "includesCallsInRecents": includesCallsInRecents,
     };
   }
 }
