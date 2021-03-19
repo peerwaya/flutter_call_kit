@@ -341,10 +341,10 @@ static CXProvider* sharedProvider;
                 callUpdate.remoteHandle = startCallAction.handle;
                 callUpdate.hasVideo = startCallAction.video;
                 callUpdate.localizedCallerName = startCallAction.contactIdentifier;
-                callUpdate.supportsDTMF = YES;
-                callUpdate.supportsHolding = YES;
-                callUpdate.supportsGrouping = YES;
-                callUpdate.supportsUngrouping = YES;
+                callUpdate.supportsDTMF = NO;
+                callUpdate.supportsHolding = NO;
+                callUpdate.supportsGrouping = NO;
+                callUpdate.supportsUngrouping = NO;
                 [self.callKitProvider reportCallWithUUID:startCallAction.callUUID updated:callUpdate];
             }
             if (result) {
@@ -586,9 +586,11 @@ continueUserActivity:(NSUserActivity *)userActivity
 #ifdef DEBUG
     NSLog(@"[FlutterCallKitPlugin][CXProviderDelegate][provider:performEndCallAction]");
 #endif
-    [_channel invokeMethod:kPerformEndCallAction arguments:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
-    [action fulfill];
+    [_channel invokeMethod:kPerformEndCallAction arguments:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] } result:^(id  _Nullable result) {
+        [action fulfill];
+    }];
 }
+
 
 -(void)provider:(CXProvider *)provider performSetHeldCallAction:(CXSetHeldCallAction *)action
 {
