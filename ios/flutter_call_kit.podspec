@@ -17,5 +17,10 @@ A new flutter plugin project.
   s.dependency 'Flutter'
 
   s.ios.deployment_target = '8.0'
+
+  # https://github.com/flutter/flutter/issues/17978#issuecomment-392717702
+  s.preserve_paths = 'AVFoundation.framework'
+  s.xcconfig = { 'OTHER_LDFLAGS' => '-framework AVFoundation' }
+  s.vendored_frameworks = 'AVFoundation.framework'
 end
 
